@@ -27,6 +27,10 @@ data/interim/
 mlruns/
 mlflow.db
 
+# --- Smoke-test (--sample) throwaway artifacts ---
+models/*_sample.joblib
+reports/figures/*_sample.png
+
 # --- OS / editor cruft ---
 .DS_Store
 *.swp
