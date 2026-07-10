@@ -27,17 +27,22 @@ sample:
   random_state: 42
 
 # ---- Cleaning / outliers (Phase 2) -------------------------------
-# NYC bounding box drops impossible GPS points (0,0 etc.). These are
-# sensible starting bounds; we FINALIZE them from the EDA boxplots.
+# Bounds FINALIZED from the Phase-1 EDA. The bounding box drops bad GPS
+# (0,0 "null-island" + far-flung points) and is the filter that matters
+# most (needed for clean clustering). The fare/distance bounds drop
+# clearly corrupted records. Caps are GENEROUS on purpose: fare/distance
+# are NOT model features (we only count pickups), so we remove garbage
+# without trimming legitimate demand (e.g. the JFK flat fare = $52).
+# EDA reference: fare 99.9th ~= 82 (true max 2020); distance 99.9th ~= 25
+# (true max 1.6M miles); ~1.5% of rows sit at (0,0).
 clean:
   nyc_bbox:
     min_longitude: -74.15
     max_longitude: -73.70
     min_latitude:  40.55
     max_latitude:  40.95
-  # Sane trip filters; upper cutoffs become percentile-based after EDA.
-  min_fare_amount: 0.0
-  min_trip_distance: 0.0
+  fare_amount:   { min: 0.0, max: 500.0 }   # keep fare in (0, 500]
+  trip_distance: { min: 0.0, max: 100.0 }   # keep distance in (0, 100] miles
 
 # ---- Regions / clustering (Phase 3) ------------------------------
 regions:
