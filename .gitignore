@@ -1,0 +1,34 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+build/
+dist/
+
+# --- Virtual environment ---
+.venv/
+venv/
+env/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Data ---
+# Raw & intermediate data are large and/or regenerable -> keep out of git.
+# (The raw ~7 GB CSVs live on the external drive, not here.)
+data/raw/
+data/interim/
+# NOTE: data/processed/ and data/external/ are intentionally NOT ignored --
+# they hold the small artifacts the Streamlit app needs (test.csv,
+# plot_data.csv), which we DO commit.
+
+# --- MLflow (local experiment logs) ---
+mlruns/
+mlflow.db
+
+# --- OS / editor cruft ---
+.DS_Store
+*.swp
+.idea/
+.vscode/

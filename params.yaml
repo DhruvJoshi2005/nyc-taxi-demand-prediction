@@ -1,0 +1,61 @@
+# =====================================================================
+# params.yaml — single source of truth for every tunable knob & path.
+# Scripts read from here so NOTHING is hard-coded. Change a value here,
+# re-run, and the whole pipeline follows. (Later, DVC watches this file.)
+# =====================================================================
+
+# ---- Paths --------------------------------------------------------
+paths:
+  # The raw 7 GB CSVs stay on the external NTFS drive (NOT copied into
+  # this repo). Code reaches across to read them.
+  # WARNING: this path contains a space ("New Volume") -> always quote
+  # it in shell commands. In Python (yaml -> str) the space is fine.
+  raw_data_dir: "/run/media/dhruv/New Volume/final_projects/uber_prediction"
+
+# The 3 months we actually use. The 2015 file is intentionally left out
+# so the monthly train/test split stays clean.
+data_files:
+  - yellow_tripdata_2016-01.csv
+  - yellow_tripdata_2016-02.csv
+  - yellow_tripdata_2016-03.csv
+
+# ---- Sampling (Phase 0/1) ----------------------------------------
+# Build & debug the whole pipeline on a small slice first (runs in
+# seconds); only then run on the full ~30M rows.
+sample:
+  n_rows: 500000
+  random_state: 42
+
+# ---- Cleaning / outliers (Phase 2) -------------------------------
+# NYC bounding box drops impossible GPS points (0,0 etc.). These are
+# sensible starting bounds; we FINALIZE them from the EDA boxplots.
+clean:
+  nyc_bbox:
+    min_longitude: -74.15
+    max_longitude: -73.70
+    min_latitude:  40.55
+    max_latitude:  40.95
+  # Sane trip filters; upper cutoffs become percentile-based after EDA.
+  min_fare_amount: 0.0
+  min_trip_distance: 0.0
+
+# ---- Regions / clustering (Phase 3) ------------------------------
+regions:
+  n_clusters: 30        # 30 zones; K justified by neighbor-distance rule
+  n_init: 10
+  random_state: 42
+
+# ---- Time series (Phase 3) ---------------------------------------
+timeseries:
+  resample_freq: "15min"  # count pickups per zone per 15-minute slot
+  ewma_alpha: 0.4         # smoothing for the "recent average" feature
+
+# ---- Features (Phase 4) ------------------------------------------
+features:
+  n_lags: 4   # use the last 4 intervals' demand as inputs (lag_1..lag_4)
+
+# ---- Train / test split (Phase 4) --------------------------------
+# Time-based split (NO shuffling): train on Jan+Feb, test on March.
+split:
+  train_months: [1, 2]
+  test_months:  [3]

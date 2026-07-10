@@ -1,0 +1,28 @@
+# Core data stack
+pandas
+numpy
+dask[dataframe]
+
+# Modeling
+scikit-learn
+
+# Plotting
+matplotlib
+seaborn
+
+# Config / serialization
+joblib
+pyyaml
+
+# Experiment tracking & pipeline
+mlflow
+dvc
+
+# App
+streamlit
+
+# Notebooks (ipykernel = register the venv as a Jupyter kernel)
+jupyter
+ipykernel
+
+# Optional, add later only if needed: xgboost, optuna, pytest
