@@ -1,0 +1,172 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python -m src.data.data_ingestion
+    deps:
+    - path: src/data/data_ingestion.py
+      hash: md5
+      md5: 4d0c46f2e4936f9949514fa349950223
+      size: 4883
+    params:
+      params.yaml:
+        clean:
+          nyc_bbox:
+            min_longitude: -74.15
+            max_longitude: -73.7
+            min_latitude: 40.55
+            max_latitude: 40.95
+          fare_amount:
+            min: 0.0
+            max: 500.0
+          trip_distance:
+            min: 0.0
+            max: 100.0
+        data_files:
+        - yellow_tripdata_2016-01.csv
+        - yellow_tripdata_2016-02.csv
+        - yellow_tripdata_2016-03.csv
+        paths:
+          raw_data_dir: /run/media/dhruv/New 
+            Volume/final_projects/uber_prediction
+    outs:
+    - path: data/interim/clean.parquet
+      hash: md5
+      md5: e4e03c963e585b8a4eb6a4df2bbe7040.dir
+      size: 247449070
+      nfiles: 82
+  make_regions:
+    cmd: python -m src.features.make_regions
+    deps:
+    - path: data/interim/clean.parquet
+      hash: md5
+      md5: e4e03c963e585b8a4eb6a4df2bbe7040.dir
+      size: 247449070
+      nfiles: 82
+    - path: src/features/make_regions.py
+      hash: md5
+      md5: bbc4643487689ef76828bbe4282aa7dd
+      size: 9091
+    params:
+      params.yaml:
+        regions:
+          n_clusters: 30
+          n_init: 10
+          random_state: 42
+        timeseries:
+          resample_freq: 15min
+          ewma_alpha: 0.4
+    outs:
+    - path: data/external/plot_data.csv
+      hash: md5
+      md5: b73e3e303b67d0f63fcfd364df6d78c0
+      size: 1901484
+    - path: data/interim/region_timeseries.csv
+      hash: md5
+      md5: 7a6c9cc9cedde84a6235d37dba6d02d3
+      size: 11674994
+    - path: models/kmeans.joblib
+      hash: md5
+      md5: d082e11586b3497bb90109c30bf7d96c
+      size: 1588
+    - path: models/scaler.joblib
+      hash: md5
+      md5: 6cf4978a979a8fb279fc75b8099b3632
+      size: 631
+    - path: reports/figures/regions_map.png
+      hash: md5
+      md5: b82004d5525e00db36ea6005bea0c36e
+      size: 97528
+  build_features:
+    cmd: python -m src.features.build_features
+    deps:
+    - path: data/interim/region_timeseries.csv
+      hash: md5
+      md5: 7a6c9cc9cedde84a6235d37dba6d02d3
+      size: 11674994
+    - path: src/features/build_features.py
+      hash: md5
+      md5: 5ac12b5eae9ef33187c526118b20efdb
+      size: 4800
+    params:
+      params.yaml:
+        features:
+          n_lags: 4
+        split:
+          train_months:
+          - 1
+          - 2
+          test_months:
+          - 3
+    outs:
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: 82863da7b0071fb4dd6223b6701ef492
+      size: 1561291
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 50dfff53e729d835455f85c793743d6f
+      size: 3106915
+  train:
+    cmd: python -m src.models.train
+    deps:
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: 82863da7b0071fb4dd6223b6701ef492
+      size: 1561291
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 50dfff53e729d835455f85c793743d6f
+      size: 3106915
+    - path: src/models/common.py
+      hash: md5
+      md5: e2f91a7183b5e7f62d762fbd4f11baa1
+      size: 3168
+    - path: src/models/train.py
+      hash: md5
+      md5: 41c18785f50698086356e9181be1d7f3
+      size: 4059
+    outs:
+    - path: models/model_linear_regression.joblib
+      hash: md5
+      md5: c6f09aceedf77fa69ff9ffe9e5de0fbe
+      size: 1728
+    - path: models/model_random_forest.joblib
+      hash: md5
+      md5: 98772c984f99f90f9796f84c22e0add8
+      size: 8296457
+  evaluate:
+    cmd: python -m src.models.evaluate
+    deps:
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: 82863da7b0071fb4dd6223b6701ef492
+      size: 1561291
+    - path: models/model_linear_regression.joblib
+      hash: md5
+      md5: c6f09aceedf77fa69ff9ffe9e5de0fbe
+      size: 1728
+    - path: models/model_random_forest.joblib
+      hash: md5
+      md5: 98772c984f99f90f9796f84c22e0add8
+      size: 8296457
+    - path: src/models/common.py
+      hash: md5
+      md5: e2f91a7183b5e7f62d762fbd4f11baa1
+      size: 3168
+    - path: src/models/evaluate.py
+      hash: md5
+      md5: 8584390b6f117864e5b858662f7edc79
+      size: 4240
+    outs:
+    - path: reports/figures/error_analysis.png
+      hash: md5
+      md5: 93cb5575dbc321f4dac7d6838c8aae5d
+      size: 45905
+    - path: reports/figures/pred_vs_actual.png
+      hash: md5
+      md5: a56d7ec0f420520bd2aa8cdde86907a8
+      size: 277039
+    - path: reports/metrics.json
+      hash: md5
+      md5: 266835922d89be4f77c6f3b80b23681e
+      size: 778

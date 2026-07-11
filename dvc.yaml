@@ -1,0 +1,79 @@
+# DVC pipeline: `dvc repro` rebuilds everything from the raw CSVs, in order.
+# `dvc dag` shows the graph. Outs use `cache: false` so the small artifacts stay in
+# git (the app needs them); DVC still records their hashes in dvc.lock for reproducibility.
+stages:
+  data_ingestion:
+    cmd: python -m src.data.data_ingestion
+    deps:
+      - src/data/data_ingestion.py
+    params:
+      - paths
+      - data_files
+      - clean
+    outs:
+      - data/interim/clean.parquet:
+          cache: false
+
+  make_regions:
+    cmd: python -m src.features.make_regions
+    deps:
+      - src/features/make_regions.py
+      - data/interim/clean.parquet
+    params:
+      - regions
+      - timeseries
+    outs:
+      - data/interim/region_timeseries.csv:
+          cache: false
+      - models/scaler.joblib:
+          cache: false
+      - models/kmeans.joblib:
+          cache: false
+      - data/external/plot_data.csv:
+          cache: false
+      - reports/figures/regions_map.png:
+          cache: false
+
+  build_features:
+    cmd: python -m src.features.build_features
+    deps:
+      - src/features/build_features.py
+      - data/interim/region_timeseries.csv
+    params:
+      - features
+      - split
+    outs:
+      - data/processed/train.parquet:
+          cache: false
+      - data/processed/test.parquet:
+          cache: false
+
+  train:
+    cmd: python -m src.models.train
+    deps:
+      - src/models/train.py
+      - src/models/common.py
+      - data/processed/train.parquet
+      - data/processed/test.parquet
+    outs:
+      - models/model_linear_regression.joblib:
+          cache: false
+      - models/model_random_forest.joblib:
+          cache: false
+
+  evaluate:
+    cmd: python -m src.models.evaluate
+    deps:
+      - src/models/evaluate.py
+      - src/models/common.py
+      - models/model_linear_regression.joblib
+      - models/model_random_forest.joblib
+      - data/processed/test.parquet
+    outs:
+      - reports/figures/pred_vs_actual.png:
+          cache: false
+      - reports/figures/error_analysis.png:
+          cache: false
+    metrics:
+      - reports/metrics.json:
+          cache: false

@@ -9,9 +9,9 @@
       "mape_nonzero_pct": 24.317000615262018
     },
     "random_forest": {
-      "mae": 13.865681891166597,
+      "mae": 13.8656818911666,
       "rmse": 21.500077854309357,
-      "mape_nonzero_pct": 20.413408529242393
+      "mape_nonzero_pct": 20.41340852924239
     }
   },
   "baselines": {
