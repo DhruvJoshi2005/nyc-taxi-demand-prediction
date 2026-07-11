@@ -70,5 +70,5 @@ else:
         top = (zp.sort_values("predicted", ascending=False).head(10)
                  .set_index("region")[["predicted", TARGET]]
                  .rename(columns={TARGET: "actual"}))
-        st.bar_chart(top)
+        st.bar_chart(top, stack=False, color=["#4c72b0", "#dd8452"])
     st.caption(f"{label}  ·  slot {tbin:%a %Y-%m-%d %H:%M}  ·  brighter = more demand")
