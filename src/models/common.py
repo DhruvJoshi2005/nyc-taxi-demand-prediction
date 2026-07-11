@@ -63,3 +63,16 @@ def baseline_predictions(df: pd.DataFrame) -> dict:
         "baseline_lag1": df["lag_1"].to_numpy(dtype=float),       # predict = last interval
         "baseline_ewma": df["avg_pickups"].to_numpy(dtype=float),  # predict = recent EWMA
     }
+
+
+# We deploy BOTH models; the Streamlit app lets the user switch between them.
+DEPLOYABLE = ["linear_regression", "random_forest"]
+DEFAULT_MODEL = "linear_regression"          # interpretable default
+MODEL_LABELS = {                             # friendly names for the app dropdown
+    "linear_regression": "Linear Regression (interpretable)",
+    "random_forest": "Random Forest (most accurate)",
+}
+
+
+def model_path(root: Path, name: str) -> Path:
+    return root / "models" / f"model_{name}.joblib"

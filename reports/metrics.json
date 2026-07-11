@@ -1,11 +1,18 @@
 {
-  "deployed_model": "LinearRegression",
   "test_period": "2016-03-01 00:00:00 .. 2016-03-31 23:45:00",
   "n_test_rows": 89280,
-  "model": {
-    "mae": 14.862512104923136,
-    "rmse": 22.57992769213425,
-    "mape_nonzero_pct": 24.317000615262018
+  "default_model": "linear_regression",
+  "models": {
+    "linear_regression": {
+      "mae": 14.862512104923136,
+      "rmse": 22.57992769213425,
+      "mape_nonzero_pct": 24.317000615262018
+    },
+    "random_forest": {
+      "mae": 13.865681891166597,
+      "rmse": 21.500077854309357,
+      "mape_nonzero_pct": 20.413408529242393
+    }
   },
   "baselines": {
     "baseline_lag1": {
@@ -19,5 +26,5 @@
       "mape_nonzero_pct": 29.109177155136358
     }
   },
-  "model_vs_best_baseline_mae_pct": 4.87
+  "default_vs_best_baseline_mae_pct": 4.87
 }

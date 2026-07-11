@@ -16,33 +16,37 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from src.models.common import (MODEL_FEATURES, TARGET, baseline_predictions,
-                               find_root, load_train_test, regression_metrics)
+from src.models.common import (DEFAULT_MODEL, DEPLOYABLE, MODEL_FEATURES, TARGET,
+                               baseline_predictions, find_root, load_train_test,
+                               model_path, regression_metrics)
 
 
 def main() -> None:
     root = find_root()
     _, te = load_train_test(root)
-    model = joblib.load(root / "models" / "model.joblib")
-
     y = te[TARGET].to_numpy(dtype=float)
-    pred = np.clip(model.predict(te[MODEL_FEATURES]), 0, None)
 
-    # ---- metrics.json: baselines vs deployed model ----
+    # ---- metrics.json: both deployed models vs the naive baselines ----
+    models = {name: joblib.load(model_path(root, name)) for name in DEPLOYABLE}
+    preds = {name: np.clip(m.predict(te[MODEL_FEATURES]), 0, None) for name, m in models.items()}
+    model_metrics = {name: regression_metrics(y, preds[name]) for name in DEPLOYABLE}
     baselines = {n: regression_metrics(y, p) for n, p in baseline_predictions(te).items()}
-    model_m = regression_metrics(y, pred)
     best_base_mae = min(m["mae"] for m in baselines.values())
     metrics = {
-        "deployed_model": type(model.named_steps["model"]).__name__,
         "test_period": f"{te['tbin'].min()} .. {te['tbin'].max()}",
         "n_test_rows": int(len(te)),
-        "model": model_m,
+        "default_model": DEFAULT_MODEL,
+        "models": model_metrics,
         "baselines": baselines,
-        "model_vs_best_baseline_mae_pct": round(100 * (best_base_mae - model_m["mae"]) / best_base_mae, 2),
+        "default_vs_best_baseline_mae_pct":
+            round(100 * (best_base_mae - model_metrics[DEFAULT_MODEL]["mae"]) / best_base_mae, 2),
     }
     (root / "reports").mkdir(exist_ok=True)
     with open(root / "reports" / "metrics.json", "w") as f:
         json.dump(metrics, f, indent=2)
+
+    # error analysis below uses the DEFAULT (interpretable) model
+    pred = preds[DEFAULT_MODEL]
 
     # ---- error analysis ----
     te = te.assign(pred=pred, abs_err=np.abs(y - pred))

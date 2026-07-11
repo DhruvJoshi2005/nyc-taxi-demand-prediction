@@ -29,7 +29,7 @@ from sklearn.linear_model import LinearRegression, Ridge
 
 from src.models.common import (MODEL_FEATURES, TARGET, baseline_predictions,
                                build_pipeline, find_root, load_train_test,
-                               regression_metrics)
+                               model_path, regression_metrics)
 
 
 def main() -> None:
@@ -49,8 +49,10 @@ def main() -> None:
     candidates = {
         "linear_regression": LinearRegression(),
         "ridge": Ridge(alpha=1.0),
+        # min_samples_leaf=50 keeps the saved model small (~8 MB vs ~67 MB at leaf=5)
+        # and git-friendly, costing only ~0.7 MAE vs the fully-grown forest.
         "random_forest": RandomForestRegressor(
-            n_estimators=100, min_samples_leaf=5, n_jobs=-1, random_state=42),
+            n_estimators=100, min_samples_leaf=50, n_jobs=-1, random_state=42),
     }
     fitted = {}
     for name, est in candidates.items():
@@ -71,9 +73,11 @@ def main() -> None:
                 if name == "linear_regression":
                     mlflow.sklearn.log_model(fitted[name], name="model")
 
-    # 4) deploy the explainable model
+    # 4) deploy BOTH models (the app lets the user switch): the interpretable default
+    #    and the most-accurate alternative. compress=3 keeps the RandomForest file small.
     (root / "models").mkdir(exist_ok=True)
-    joblib.dump(fitted["linear_regression"], root / "models" / "model.joblib")
+    for name in ("linear_regression", "random_forest"):
+        joblib.dump(fitted[name], model_path(root, name), compress=3)
 
     # 5) comparison table + headline improvement over the best baseline
     tbl = pd.DataFrame(results).T[["mae", "rmse", "mape_nonzero_pct"]].sort_values("mae")
@@ -83,7 +87,7 @@ def main() -> None:
     lr_mae = results["linear_regression"]["mae"]
     print(f"\nLinearRegression MAE {lr_mae:.3f}  vs  best baseline MAE {best_base:.3f}"
           f"  ->  {100 * (best_base - lr_mae) / best_base:+.1f}% (negative = better)")
-    print("saved models/model.joblib")
+    print("saved models/model_linear_regression.joblib + models/model_random_forest.joblib")
 
 
 if __name__ == "__main__":
