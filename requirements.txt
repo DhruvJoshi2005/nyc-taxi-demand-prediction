@@ -1,28 +1,12 @@
-# Core data stack
-pandas
-numpy
-dask[dataframe]
-
-# Modeling
-scikit-learn
-
-# Plotting
-matplotlib
-seaborn
-
-# Config / serialization
-joblib
-pyyaml
-
-# Experiment tracking & pipeline
-mlflow
-dvc
-
-# App
-streamlit
-
-# Notebooks (ipykernel = register the venv as a Jupyter kernel)
-jupyter
-ipykernel
-
-# Optional, add later only if needed: xgboost, optuna, pytest
+# Runtime dependencies for the Streamlit app.
+# This is the file Streamlit Community Cloud installs, so it is kept MINIMAL (fast,
+# reliable cloud builds) and PINNED (the deployed env must match training - especially
+# scikit-learn, which has to match to unpickle models/*.joblib).
+# For the full data pipeline + notebooks, use requirements-dev.txt instead.
+streamlit==1.59.1
+pandas==2.3.3
+numpy==2.5.1
+scikit-learn==1.9.0
+joblib==1.5.3
+matplotlib==3.11.0
+pyarrow==24.0.0
