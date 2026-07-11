@@ -4,7 +4,7 @@ Predict the number of taxi pickups in each of **30 NYC zones** for the **next 15
 NYC Yellow-Taxi trip data (2016, Jan–Mar). A supervised **regression** problem built on a
 **time-series + spatial-clustering** pipeline, served as an interactive **Streamlit** app.
 
-**🚀 Live demo:** _add your Streamlit Cloud URL here after deploying_ · **Stack:** Python 3.12 · Dask · scikit-learn · MLflow · DVC · Streamlit
+**🚀 Live demo:** **[nyc-taxi-demand-prediction-dj.streamlit.app](https://nyc-taxi-demand-prediction-dj.streamlit.app)** · **Stack:** Python 3.12 · Dask · scikit-learn · MLflow · DVC · Streamlit
 
 ---
 
