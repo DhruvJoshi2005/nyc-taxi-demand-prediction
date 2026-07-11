@@ -72,3 +72,34 @@ else:
                  .rename(columns={TARGET: "actual"}))
         st.bar_chart(top, stack=False, color=["#4c72b0", "#dd8452"])
     st.caption(f"{label}  ·  slot {tbin:%a %Y-%m-%d %H:%M}  ·  brighter = more demand")
+
+# ---- About / info section (appears at the bottom of the page) ----
+st.divider()
+st.subheader("ℹ️ About this project")
+about_left, about_right = st.columns(2)
+with about_left:
+    st.markdown(
+        "**What it does** — predicts NYC taxi pickup demand for the **next 15 minutes** "
+        "across **30 city zones**, from 2016 Yellow-Taxi trip data.\n\n"
+        "**How it works** — 34.5M trips are cleaned out-of-core with **Dask**, "
+        "**KMeans** clusters pickups into 30 demand zones, and each zone becomes a "
+        "**15-minute time series**. A regression model uses recent-demand **lag features** "
+        "plus **cyclical time-of-day / day-of-week** encodings. Trained on Jan–Feb 2016, "
+        "tested on March.\n\n"
+        "**Results (March hold-out)** — both models beat the naive *predict-the-last-value* "
+        "baseline (MAE 15.6): **Random Forest 13.9**, **Linear Regression 14.9**."
+    )
+with about_right:
+    st.markdown(
+        "**Using this demo** — pick a date, time and model on the left:\n"
+        "- **Map** — each zone coloured by predicted pickups (brighter = busier).\n"
+        "- **Bar chart** — predicted vs actual for the busiest zones.\n"
+        "- **Metrics** — city-wide predicted vs actual for that 15-minute slot.\n\n"
+        "**Why two models?** *Linear Regression* is interpretable; *Random Forest* is a "
+        "bit more accurate — toggle to see the accuracy-vs-explainability trade-off.\n\n"
+        "**Code & full write-up** → "
+        "[github.com/DhruvJoshi2005/nyc-taxi-demand-prediction]"
+        "(https://github.com/DhruvJoshi2005/nyc-taxi-demand-prediction)"
+    )
+st.caption("Built by Dhruv Joshi · data: NYC TLC Trip Records · experiments tracked with "
+           "MLflow, pipeline reproducible with DVC.")
