@@ -86,9 +86,18 @@ def main() -> None:
     in_box, ok_fare, ok_dist = build_masks(ddf, params["clean"])
     keep = in_box & ok_fare & ok_dist
 
-    # --- Pass 1: count rows each rule keeps (a single fused Dask computation) ---
-    n_total, n_box, n_fare, n_dist, n_keep = dask.compute(
-        ddf.shape[0], in_box.sum(), ok_fare.sum(), ok_dist.sum(), keep.sum())
+    # Build the filtered output as a lazy plan (nothing written yet).
+    out = ddf[keep][KEEP_COLS]
+    out = out.assign(tpep_pickup_datetime=dd.to_datetime(out["tpep_pickup_datetime"]))
+    if out_path.exists():
+        shutil.rmtree(out_path)
+    write_task = out.to_parquet(out_path, engine="pyarrow", write_index=False, compute=False)
+
+    # ONE fused computation: counts for the report AND the parquet write share the
+    # same underlying CSV read, so the raw files are only read from disk once
+    # (previously: once to count, once again to write - two full reads).
+    n_total, n_box, n_fare, n_dist, n_keep, _ = dask.compute(
+        ddf.shape[0], in_box.sum(), ok_fare.sum(), ok_dist.sum(), keep.sum(), write_task)
 
     def pct(x: int) -> str:
         return f"{100 * x / n_total:5.2f}%"
@@ -100,13 +109,6 @@ def main() -> None:
     print(f"  distance in (0, {dmax:g}]     : {n_dist:>12,}  ({pct(n_dist)})")
     print(f"  KEPT (all rules AND-ed) : {n_keep:>12,}  ({pct(n_keep)})"
           f"   -> dropped {n_total - n_keep:,} ({pct(n_total - n_keep)})")
-
-    # --- Pass 2: filter, keep only needed columns, parse datetime, write ---
-    out = ddf[keep][KEEP_COLS]
-    out = out.assign(tpep_pickup_datetime=dd.to_datetime(out["tpep_pickup_datetime"]))
-    if out_path.exists():
-        shutil.rmtree(out_path)
-    out.to_parquet(out_path, engine="pyarrow", write_index=False)
 
     print(f"\n  wrote {out_path.relative_to(root)}  in {time.time() - t0:.1f}s")
 
