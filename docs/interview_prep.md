@@ -142,3 +142,37 @@ light CI so "model still beats baseline" is enforced automatically.
 This is a batch/offline project on historical data. For real-time I'd stream recent pickup counts,
 recompute lags per zone on a rolling window, and serve the same model behind an API — the feature
 logic is identical; only the data source changes.
+
+---
+
+## Deep dive: how I chose K=30 (and a metric trap to avoid)
+
+I didn't just pick 30 and hope. I ran a full **K sweep** (K = 15, 25, 40, 60, 80, 100), training
+**both** deployed models (Linear Regression + Random Forest) end-to-end at each K, with two
+reasonableness gates decided up front: neighbour distance ~1–3 miles, and <5% zero-demand slots.
+
+![K selection analysis](../reports/figures/k_selection_analysis.png)
+
+| K | zone size | RF improvement over baseline | note |
+|---|---|---|---|
+| 15 | 3.14 mi | +13.2% | too coarse (multi-neighbourhood zones) |
+| 25 | 2.19 mi | +11.6% | |
+| **30** | **~2.0 mi** | **~+11.2%** | **chosen** |
+| 40 | 1.67 mi | +11.7% | |
+| 60 | 1.48 mi | +12.0% | |
+| 80 | 1.15 mi | +12.6% | |
+| 100 | 0.98 mi | +13.1% | below 1-mile floor; 3× bigger model, ~26× slower to train |
+
+**The trap (and the key insight):** *raw* MAE falls steadily as K rises (21.6 → 6.7) — but that is a
+**scale artifact**, not a real gain: smaller zones have smaller pickup counts, so errors are smaller
+numbers. The fair metric is **improvement over the naive baseline**, and on that metric the model is
+**~flat (11.6–13.2% for RF) across every K** — it beats naive forecasting by ~12% whether there are
+15 zones or 100. So K does *not* meaningfully change model quality.
+
+**Conclusion:** since accuracy is flat, K is chosen on **interpretability + deployment cost**, where
+K=30 wins — ~2-mile neighbourhood-sized zones a dispatcher can act on, a small/fast model, vs K=100's
+sub-mile fragments and a much heavier model for no real accuracy gain.
+
+**One-liner:** *"I swept K with both models. Raw error drops with K, but that's a scale illusion —
+on the fair 'improvement over baseline' metric the model is flat at ~12% for all K, so I chose K=30
+for interpretability and deployment cost, not to chase a smaller-but-meaningless MAE."*
